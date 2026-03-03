@@ -6,6 +6,9 @@ MeterMonitor accepts images from any source — an **ESP32-CAM with ESPHome**, a
 
 ## Hardware
 
+> **Recommended solution: [MeterMonitor-esp](https://github.com/MeterMonitor-io/MeterMonitor-esp)**
+> A ready-to-flash ESPHome configuration and 3D-printable mount designed specifically for MeterMonitor. This is the easiest way to get started — no custom ESPHome config required.
+
 **Recommended board:** AI-Thinker ESP32-CAM (~€5–10)
 - Built-in OV2640 camera (2MP)
 - GPIO4 flash LED (optional but useful)

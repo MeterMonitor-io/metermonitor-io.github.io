@@ -59,6 +59,17 @@ Uses a reference image and manually marked corner points to find the display. Mo
 
 > **Tip:** Mark the digit area only — exclude the meter housing. Leave a small margin around the digits.
 
+**Per-digit bounding boxes (optional)**
+
+If digits have varying sizes, unusual spacing, or ORB accuracy is still low after marking the display area, switch to **Each digit** mode. Instead of marking the overall display, you draw an individual bounding box for each digit:
+
+1. Change the segment mode to **Each digit** in the configurator.
+2. Draw one bounding quad per digit (in order, left to right).
+3. The number of quads must match the **Segments** count.
+4. Save the template.
+
+This mode is useful for meters where digits are not evenly spaced or overlap with non-digit elements.
+
 #### Static Rectangle
 Crops a fixed rectangle from every image — no detection involved. Use this when the camera is rigidly mounted and the display is always at the same position.
 
@@ -66,6 +77,14 @@ Crops a fixed rectangle from every image — no detection involved. Use this whe
 2. The crop is applied to every image without any matching.
 
 Good choice for IP cameras or when both YOLO and ORB are unreliable.
+
+**Per-digit bounding boxes (optional)**
+
+Static Rectangle also supports **Each digit** mode — define individual crop regions for each digit instead of one shared rectangle. This is useful when digits are non-uniformly spaced or some digits need a different crop:
+
+1. Change the segment mode to **Each digit**.
+2. Define a bounding quad for each digit position.
+3. The number of quads must match the **Segments** count.
 
 #### Bypass
 Passes the entire image directly to digit recognition without any cropping. Only useful for testing or when images are already pre-cropped.

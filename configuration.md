@@ -106,21 +106,23 @@ Configuration is stored as JSON. The location depends on how you run MeterMonito
 
 ## Per-meter settings
 
-These are configured per meter through the web interface (meter detail → **Edit Settings**), not in the main config file.
+These settings are configured per meter during the **Setup wizard** — the multi-step flow that opens when you click a newly discovered meter in the Discovery tab. They are not part of the main config file.
 
-| Setting | Description |
-|---|---|
-| `roi_extractor` | Detection method: `yolo` (automatic), `orb` (template), `static_rect` (fixed crop), or `bypass` |
-| `segments` | Number of digits on the meter display |
-| `decimals` | How many of the rightmost digits are after the decimal point |
-| `threshold_low` / `threshold_high` | Grayscale range for isolating digits (0–255) |
-| `threshold_last_low` / `threshold_last_high` | Separate thresholds for the decimal-part digits |
-| `max_flow_rate` | Maximum realistic flow in m³/h — readings exceeding this are rejected |
-| `conf_threshold` | Minimum confidence (0.0–1.0) to accept a reading; `null` disables the check |
-| `use_correctional_alg` | `true` for full error correction, `false` for light mode |
-| `rotated_180` | Rotate the image 180° (for upside-down cameras) |
-| `shrink_last_3` | Reduce width of the rightmost 3 digits (for compact meter layouts) |
-| `extended_last_digit` | Extend the capture area of the last digit |
+After initial setup you can revisit and adjust them by clicking the meter in the **Watermeters** tab and going to **Setup**.
+
+| Setting | Configured in setup step | Description |
+|---|---|---|
+| `roi_extractor` | Step 1 – Digit Extraction | Detection method: `yolo` (automatic), `orb` (template), `static_rect` (fixed crop), or `bypass` |
+| `segments` | Step 1 – Digit Extraction | Number of digits on the meter display |
+| `rotated_180` | Step 1 – Digit Extraction | Rotate the image 180° (for upside-down cameras) |
+| `extended_last_digit` | Step 1 – Digit Extraction | Extend the capture area of the last digit |
+| `shrink_last_3` | Step 1 – Digit Extraction | Reduce width of the rightmost 3 digits (for compact meter layouts) |
+| `decimals` | Step 2 – Digit Isolation | How many of the rightmost digits are after the decimal point |
+| `threshold_low` / `threshold_high` | Step 2 – Digit Isolation | Grayscale range for isolating digits (0–255) |
+| `threshold_last_low` / `threshold_last_high` | Step 2 – Digit Isolation | Separate thresholds for the decimal-part digits |
+| `max_flow_rate` | Step 3 – Evaluation Settings | Maximum realistic flow in m³/h — readings exceeding this are rejected |
+| `conf_threshold` | Step 3 – Evaluation Settings | Minimum confidence (0.0–1.0) to accept a reading; `null` disables the check |
+| `use_correctional_alg` | Step 3 – Evaluation Settings | `true` for full error correction, `false` for light mode |
 
 ---
 
