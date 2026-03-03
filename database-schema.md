@@ -86,7 +86,7 @@ Stores water meter devices and their latest images.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `name` | TEXT | PRIMARY KEY | Unique meter identifier |
-| `picture_number` | INTEGER | NOT NULL | Monotonic counter from ESP32 |
+| `picture_number` | INTEGER | NOT NULL | Monotonic counter managed by backend |
 | `wifi_rssi` | INTEGER | NOT NULL | WiFi signal strength (dBm) |
 | `picture_format` | TEXT | NOT NULL | Image format (jpg, png) |
 | `picture_timestamp` | TEXT | NOT NULL | ISO 8601 timestamp |
@@ -124,8 +124,8 @@ Configuration settings for each water meter.
 | `name` | TEXT | PRIMARY KEY, FK | Meter name (references watermeters) |
 | `threshold_low` | INTEGER | NOT NULL | Minimum pixel brightness for main digits |
 | `threshold_high` | INTEGER | NOT NULL | Maximum pixel brightness for main digits |
-| `threshold_last_low` | INTEGER | NOT NULL | Minimum brightness for last digit |
-| `threshold_last_high` | INTEGER | NOT NULL | Maximum brightness for last digit |
+| `threshold_last_low` | INTEGER | NOT NULL | Minimum brightness for decimal digits |
+| `threshold_last_high` | INTEGER | NOT NULL | Maximum brightness for decimal digits |
 | `islanding_padding` | INTEGER | NOT NULL | Padding percentage for islanding (0-100) |
 | `segments` | INTEGER | NOT NULL | Number of digit segments (typically 7) |
 | `rotated_180` | BOOLEAN | NOT NULL | Whether to rotate image 180° |
@@ -135,6 +135,9 @@ Configuration settings for each water meter.
 | `conf_threshold` | REAL | NULLABLE | Minimum confidence threshold (0-1) |
 | `roi_extractor` | TEXT | DEFAULT 'yolo' | ROI extractor type (yolo/orb/bypass) |
 | `template_id` | TEXT | NULLABLE | Template ID for ORB extractor |
+| `segment_mode` | TEXT | DEFAULT 'display' | Segmentation mode (`display` / `each_digit`) |
+| `digit_models` | TEXT | NULLABLE | JSON array with per-digit model (`rotating` / `segment`) |
+| `decimals` | INTEGER | DEFAULT 3 | Number of decimal digits |
 | `use_correctional_alg` | BOOLEAN | DEFAULT true | Use full (true) or light (false) correction |
 
 **Foreign Key**:

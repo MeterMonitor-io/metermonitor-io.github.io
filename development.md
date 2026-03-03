@@ -331,7 +331,7 @@ yarn dev
 ```bash
 # Send test message
 mosquitto_pub -h localhost -t "MeterMonitor/test_meter" \
-  -m '{"name":"test_meter","picture_number":1,"WiFi-RSSI":-45,"picture":{"timestamp":"2026-01-28T10:00:00","format":"jpg","width":640,"height":480,"length":1234,"data":"base64_encoded_image"}}'
+  -m '{"name":"test_meter","WiFi-RSSI":-45,"picture":{"timestamp":"2026-01-28T10:00:00","format":"jpg","data":"base64_encoded_image"}}'
 ```
 
 ### Automated Testing

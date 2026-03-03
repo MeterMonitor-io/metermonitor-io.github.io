@@ -28,6 +28,9 @@ MeterMonitor is an AI-powered backend system for reading analog water meters via
 - **MQTT Integration**: Seamless image ingestion from ESP32 devices
 - **Multiple Sources**: Support for MQTT, Home Assistant cameras, and HTTP endpoints
 - **Template-Based ROI**: Manual region selection using ORB feature matching
+- **Per-Digit Models**: Mix rotating-digit and 7-segment models per position
+- **Configurable Decimals**: Decimal separator position configurable per meter
+- **Realtime UI Updates**: WebSocket event stream for automatic evaluation updates
 - **FastAPI Backend**: High-performance REST API with automatic documentation
 - **Vue 3 Frontend**: Modern, responsive web interface
 - **Home Assistant Integration**: Native addon with MQTT auto-discovery

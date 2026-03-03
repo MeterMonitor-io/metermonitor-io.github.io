@@ -107,9 +107,19 @@ Thresholds determine how digits are extracted from the image.
 - `threshold_high`: Maximum pixel brightness (0-255)
 - Adjust to isolate digit pixels from background
 
-**Last Digit Thresholds** (if different):
-- `threshold_last_low`: Separate threshold for rightmost digit
-- `threshold_last_high`: Often needs different values due to rotation indicator
+**Decimal Digit Thresholds** (if different):
+- `threshold_last_low`: Separate threshold for decimal-part digits
+- `threshold_last_high`: Useful when decimal wheels/segments have different contrast
+
+**Decimal Position**:
+- Use the decimal control (`.` with arrows) in the threshold picker
+- Moves decimal separator left/right
+- Defines how many rightmost digits use `threshold_last_*`
+
+**Per-Digit Model Selection**:
+- Toggle each digit between rotating-wheel model and 7-segment model
+- Use the icon row below the digit previews
+- Mixed setups are supported (per-digit)
 
 **Islanding Padding**:
 - Percentage of digit area to ignore at edges (default: 20%)
@@ -127,7 +137,7 @@ Thresholds determine how digits are extracted from the image.
 **Segments**: Number of digits on your meter (typically 7)
 
 **Layout Options**:
-- `shrink_last_3`: Reduces width of last 3 digits (for compact layouts)
+- `shrink_last_3`: Reduces width of rightmost 3 digits (for compact layouts)
 - `extended_last_digit`: Extends rightmost digit capture area
 - `rotated_180`: Flips image if meter is upside-down
 

@@ -339,12 +339,21 @@ Grayscale thresholding range for digits 1-4 (or 1-N if not using `threshold_last
 
 #### `threshold_last_low` / `threshold_last_high`
 
-Grayscale thresholding range for the last 3 digits.
+Grayscale thresholding range for the decimal digits (right side of the decimal separator).
 
 - **Type**: Integer (0-255)
 - **Defaults**: `low=0`, `high=100`
 - **Description**: Separate thresholds for fractional digits, which often have different lighting.
 - **Use Case**: When the last digits have different contrast (e.g., red numbers)
+
+#### `decimals`
+
+Number of decimal digits in the meter display.
+
+- **Type**: Integer
+- **Default**: `3`
+- **Range**: `0..segments`
+- **Description**: Controls decimal separator position and how many rightmost digits use `threshold_last_*`.
 
 ### Segmentation Settings
 

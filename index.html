@@ -7,20 +7,26 @@
     <link rel="icon" href="logo.png" />
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css"
+      href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/style.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/docsify-sidebar-collapse/dist/sidebar.min.css"
     />
     <style>
       :root {
         --theme-color: #c14b2e;
+        --base-background-color: #f7f2ea;
+        --sidebar-background: #fffdf8;
+        --text-color-base: #242424;
       }
 
       body {
         font-family: "Space Grotesk", "Segoe UI", sans-serif;
-        background: #f7f2ea;
-      }
-
-      .sidebar {
-        background: #fffdf8;
       }
 
       .sidebar .app-name {
@@ -40,6 +46,12 @@
       .markdown-section {
         max-width: 900px;
       }
+
+      [data-theme="dark"] {
+        --base-background-color: #1a1f24;
+        --sidebar-background: #11161b;
+        --text-color-base: #e3e6ea;
+      }
     </style>
   </head>
   <body>
@@ -50,15 +62,26 @@
         name: "MeterMonitor",
         logo: "logo.png",
         loadSidebar: true,
+        alias: {
+          "/.*/_sidebar.md": "/_sidebar.md",
+        },
+        relativePath: true,
         subMaxLevel: 2,
         auto2top: true,
         homepage: "README.md",
         executeScript: false,
         search: "auto",
         repo: "",
+        sidebarDisplayLevel: 1,
+        darklightTheme: {
+          defaultTheme: "light",
+          siteFont: "Space Grotesk, Segoe UI, sans-serif",
+        },
       };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-sidebar-collapse/dist/docsify-sidebar-collapse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/index.min.js"></script>
   </body>
 </html>

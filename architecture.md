@@ -77,18 +77,20 @@ Handles MQTT communication:
 ```json
 {
   "name": "watermeter_1",
-  "picture_number": 123,
   "WiFi-RSSI": -56,
   "picture": {
     "format": "jpg",
     "timestamp": "2026-01-28T10:30:00",
-    "width": 640,
-    "height": 480,
-    "length": 12345,
     "data": "base64_encoded_image_data"
   }
 }
 ```
+
+Notes:
+- `WiFi-RSSI`, `picture.format`, `picture.timestamp` are optional.
+- `picture.timestamp` accepts ISO and Unix (s/ms).
+- `picture.data` accepts raw base64 and data-URI format.
+- `picture_number`, image dimensions and length are derived/stored server-side.
 
 ### 3. HTTP Server (`lib/http_server.py`)
 
@@ -243,14 +245,14 @@ Modern Vue 3 SPA with Vite:
                 ↓
 5. Thresholding
    ├─ Convert to grayscale
-   ├─ Apply threshold_low/high (or threshold_last for last 3)
+   ├─ Apply threshold_low/high (or threshold_last for configured decimal digits)
    ├─ Connected component analysis
    └─ Island extraction with padding
                 ↓
 6. Digit Classification
    ├─ Resize to 40x64
    ├─ Normalize to [0,1]
-   ├─ CNN inference (ONNX)
+   ├─ Per-digit model inference (rotating or 7-segment ONNX)
    └─ Get top-3 predictions per digit
                 ↓
 7. Error Correction (history_correction.py)
@@ -264,7 +266,7 @@ Modern Vue 3 SPA with Vite:
    ├─ Insert evaluation record
    ├─ Update history if accepted
    ├─ Publish to MQTT (homeassistant/sensor/...)
-   └─ Update frontend via API
+   └─ Push realtime event over `/api/ws/evaluations` (automatic captures only)
 ```
 
 ### Configuration Flow

@@ -29,6 +29,15 @@ This comprehensive guide covers all installation methods for MeterMonitor.
    ```
 5. Click **Add** and wait for the repository to load
 
+For preview/dev add-on builds, use:
+```
+https://github.com/phiph-s/metermonitor-managementserver/tree/develop
+```
+
+Notes:
+- Stable channel uses normal versions (e.g. `4.0.0`)
+- Develop channel publishes `-dev` versions (e.g. `4.0.0-dev`)
+
 ### Step 2: Install Add-on
 
 1. Refresh the add-on store page

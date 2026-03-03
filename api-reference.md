@@ -206,6 +206,9 @@ GET /api/settings
       "conf_threshold": null,
       "roi_extractor": "yolo",
       "template_id": null,
+      "segment_mode": "display",
+      "digit_models": null,
+      "decimals": 3,
       "use_correctional_alg": true
     }
   ]
@@ -237,6 +240,9 @@ Both endpoints return the same data.
   "conf_threshold": null,
   "roi_extractor": "yolo",
   "template_id": null,
+  "segment_mode": "display",
+  "digit_models": null,
+  "decimals": 3,
   "use_correctional_alg": true
 }
 ```
@@ -265,6 +271,9 @@ POST /api/settings
   "conf_threshold": 0.6,
   "roi_extractor": "yolo",
   "template_id": null,
+  "segment_mode": "display",
+  "digit_models": null,
+  "decimals": 3,
   "use_correctional_alg": true
 }
 ```
@@ -1031,14 +1040,10 @@ ESP32 devices should publish messages in this format:
 ```json
 {
   "name": "kitchen_meter",
-  "picture_number": 1542,
   "WiFi-RSSI": -45,
   "picture": {
     "timestamp": "2026-01-28T10:30:00",
     "format": "jpg",
-    "width": 640,
-    "height": 480,
-    "length": 12543,
     "data": "base64_encoded_image_data"
   }
 }
@@ -1046,14 +1051,38 @@ ESP32 devices should publish messages in this format:
 
 **Field Descriptions**:
 - `name`: Unique meter identifier (alphanumeric, underscores, hyphens)
-- `picture_number`: Monotonically increasing counter
-- `WiFi-RSSI`: Signal strength in dBm (negative value)
-- `picture.timestamp`: ISO 8601 timestamp (or "0" for current time)
-- `picture.format`: Image format (jpg, png)
-- `picture.width`: Image width in pixels
-- `picture.height`: Image height in pixels
-- `picture.length`: Base64 data length
-- `picture.data`: Base64-encoded image
+- `WiFi-RSSI` (optional): Signal strength in dBm
+- `picture.timestamp` (optional): ISO-8601 or Unix timestamp (seconds/ms). Missing/invalid values are replaced with server time.
+- `picture.format` (optional): Image format hint (`jpg`, `jpeg`, `png`, ...). If omitted, the server detects format.
+- `picture.data` (**required**): Base64 image bytes. Both raw base64 and `data:image/...;base64,...` are accepted.
+
+Server-generated fields:
+- `picture_number` is managed by MeterMonitor.
+- `picture.width`, `picture.height`, `picture.length` are derived from decoded image data.
+
+---
+
+## Realtime Updates (WebSocket)
+
+When automatic evaluations complete (MQTT / polling / HTTP capture), the backend emits realtime events.
+
+```text
+GET /api/ws/evaluations?secret=...
+```
+
+Event payload:
+
+```json
+{
+  "type": "evaluation_created",
+  "name": "kitchen_meter",
+  "timestamp": "2026-03-03T14:10:00"
+}
+```
+
+Notes:
+- Manual reevaluation in setup/UI does not emit this event.
+- Client should refresh meter/setup views only if `name` matches current meter.
 
 ### Outgoing Messages (HA Discovery)
 
@@ -1108,7 +1137,7 @@ No built-in rate limiting. Recommended practices:
 
 ## Versioning
 
-API version follows MeterMonitor version (currently v3.1.x).
+API version follows MeterMonitor version defined in `config.json`.
 
 Breaking changes are documented in CHANGELOG.md.
 

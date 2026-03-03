@@ -460,18 +460,25 @@ If implementing custom MQTT upload:
 ```json
 {
   "name": "watermeter",
-  "picture_number": 1542,
   "WiFi-RSSI": -45,
   "picture": {
     "timestamp": "2026-01-28T10:30:00",
     "format": "jpg",
-    "width": 640,
-    "height": 480,
-    "length": 12543,
     "data": "base64_encoded_image_data"
   }
 }
 ```
+
+Minimal accepted payload is:
+- `name`
+- `picture.data`
+
+Optional:
+- `WiFi-RSSI`
+- `picture.timestamp` (ISO or Unix seconds/ms)
+- `picture.format`
+
+`picture.data` can be either raw base64 or `data:image/...;base64,...`.
 
 ### MeterMonitor MQTT Configuration
 
