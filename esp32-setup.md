@@ -1,6 +1,6 @@
 # ESP32 / Camera Setup
 
-MeterMonitor accepts images from any source — an **ESP32-CAM with ESPHome**, a **Home Assistant camera entity**, or any **HTTP endpoint**. This guide covers the ESP32 path.
+MeterMonitor accepts images from any source — the **official MQTT-based software** for the ESP32, an **ESP32-CAM with ESPHome** using a **Home Assistant camera entity**, or any **HTTP endpoint**. This guide covers the ESP32 path.
 
 ---
 
@@ -98,17 +98,7 @@ Flash initial firmware via USB/FTDI, then use ESPHome OTA for all future updates
 
 ## Sending images to MeterMonitor
 
-### Option A — Home Assistant Camera source (recommended)
-
-1. Add the ESP32 to Home Assistant via the ESPHome integration
-2. In MeterMonitor, go to **Sources → Create Source → HA Camera**
-3. Set the camera entity ID (e.g. `camera.watermeter_camera`)
-4. Set a poll interval (e.g. `300` for every 5 minutes)
-5. If you have a flash LED, set the flash entity ID and a delay of `~1000ms`
-
-MeterMonitor will poll the camera, optionally trigger the flash, and process the image.
-
-### Option B — Direct MQTT
+### Option A — Direct MQTT (push - no capture on demand)
 
 If you want the ESP32 to push images directly, publish to `MeterMonitor/<device-name>` with this payload:
 
@@ -123,18 +113,38 @@ If you want the ESP32 to push images directly, publish to `MeterMonitor/<device-
 }
 ```
 
-`name` and `picture.data` are required. Timestamp and RSSI are optional.
+`name` and `picture.data` are required. Timestamp and RSSI are optional. 
 
-This requires a custom ESPHome component or external script to base64-encode and publish the camera image.
+**Recommended solution: [MeterMonitor-esp](https://github.com/MeterMonitor-io/MeterMonitor-esp)** - it implements a very power-efficient MQTT option and provides a simple way to integrate with MeterMonitor.
 
 ---
+
+### Option B — Home Assistant Camera source (pull - capture on demand)
+
+1. Add the ESP32 to Home Assistant via the ESPHome integration
+2. In MeterMonitor, go to **Add watermeter → Source-Type "Home Assistant""**
+3. Set the camera entity ID (e.g. `camera.watermeter_camera`)
+4. Set a poll interval in minutes
+5. If you have a flash LED, set the flash entity ID and a delay of `~1000ms` (maybe longer for better results or bad connection)
+
+MeterMonitor will poll the camera, optionally trigger the flash, and process the image.
+
+### Option C - HTTP Polling (pull - capture on demand)
+
+MeterMonitor can poll an HTTP endpoint for images. This is useful if you have a custom camera setup or want to integrate with a different system.
+1. Go to **Add watermeter → Source-Type "HTTP""**
+2. Set the HTTP endpoint URL (e.g. `http://192.168.1.100/camera.jpg`)
+3. Set a poll interval in minutes
+4. Set your custom headers or body to send with the GET-request.
+
+MeterMonitor will poll the camera and process the image.
 
 ## Camera positioning
 
 - **Distance:** 15–25 cm from the meter face
 - **Angle:** As perpendicular as possible — avoid more than ~30° of tilt
 - **Entire display must be visible** including all digits
-- **Stable mount** — any movement between captures confuses the correction algorithm
+- **Stable mount** — movement between captures should be minimal
 
 ### Lens focus
 

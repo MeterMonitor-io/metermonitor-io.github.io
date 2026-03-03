@@ -1148,4 +1148,3 @@ Breaking changes are documented in CHANGELOG.md.
 - [User Guide](user-guide.md)
 - [ESP32 Setup](esp32-setup.md)
 - [Troubleshooting](troubleshooting.md)
-- [Development Guide](development.md)

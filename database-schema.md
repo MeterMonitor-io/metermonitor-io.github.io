@@ -690,6 +690,5 @@ DELETE FROM sources WHERE name NOT IN (SELECT name FROM watermeters);
 
 - [User Guide](user-guide.md)
 - [API Reference](api-reference.md)
-- [Development Guide](development.md)
 - [Troubleshooting](troubleshooting.md)
 - [SQLite Documentation](https://www.sqlite.org/docs.html)

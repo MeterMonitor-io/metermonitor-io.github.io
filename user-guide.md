@@ -6,7 +6,7 @@ This guide walks through everything you can do in the MeterMonitor web interface
 
 ## Discovery
 
-When MeterMonitor receives its first image from a device it creates an entry in the **Discovery** tab. New meters appear here automatically — you don't need to create them manually.
+When MeterMonitor receives its first image from a device it creates an entry in the **Waiting for setup** area. New meters appear here automatically — you don't need to create them manually.
 
 ### MQTT Setup Helper
 
@@ -43,7 +43,7 @@ Click a discovered meter to start setup. This configures how images are processe
 
 MeterMonitor needs to locate the digit display within the camera image. Four methods are available:
 
-#### YOLO (default — recommended)
+#### YOLO (default)
 Automatic AI-based detection. Works for most standard water meters with no configuration needed.
 
 - Enable **Rotated 180°** if the camera is mounted upside-down.
@@ -101,10 +101,10 @@ Click **Search Thresholds** and choose a step count (3–25). A higher count giv
 
 #### Manual adjustment
 
-- **Threshold Low / High** — the grayscale brightness range (0–255) that is treated as "digit". Pixels within this range are set to white; everything else is black.
+- **Threshold Low / High** — the grayscale brightness range (0–255) that is treated as "digit". Pixels within this range should contain the digit.
 - **Threshold Last Low / High** — separate thresholds for the decimal-part digits (rightmost). Useful when those digits are printed in a different color or have different contrast.
 
-> **Reading the preview:** white pixels should show only the digit shape on a black background. If the digit looks broken, raise `threshold_high`. If there is too much noise, lower it.
+> **Reading the preview:** In dark mode: the digits should be white and the background black. In light mode the digits are black and the background is white. If the digit looks broken, adjust the thresholds.
 
 #### Islanding Padding
 
@@ -165,7 +165,7 @@ Enter the current meter reading. This is used as the starting point for consumpt
 
 ### History chart
 
-Each meter shows a chart of readings over time. Green points are automatic readings; blue points are manual entries. Hover over a point to see the exact value, confidence, and timestamp.
+Each meter shows a chart of readings over time. Hover over a point to see the exact value, confidence, and timestamp.
 
 ### Evaluation details
 
@@ -183,20 +183,20 @@ Click any reading in the evaluation list to see:
 | 0.6–0.8 | Acceptable — monitor for issues |
 | < 0.6 | Poor — check thresholds and lighting |
 
-### Manual entries
+### Correcting wrong readings
 
-If a reading is wrong, you can add a manual correction:
-1. Go to the meter's history
-2. Click **Add Manual Entry**
-3. Enter the correct value and timestamp
-
-Manual entries are marked separately in the chart and are used by the correction algorithm as reference points.
+If readings are consistently wrong, the fix is to revisit the **Setup** wizard:
+1. Open the meter in the **Watermeters** tab
+2. Click **Setup** to re-enter the setup flow
+3. Adjust thresholds, extractor, or digit models as needed
+4. After changing settings, use **Reset Corr. Alg.** from the three-dot menu so the correction algorithm starts fresh
 
 ---
 
 ## Sources
 
-Sources define how images reach MeterMonitor. Navigate to the **Sources** tab to manage them.
+Sources define how images reach MeterMonitor. Each meter has a source that provides images. You can enable/disable sources.
+Creating a meter always also creates a source.
 
 ### MQTT source
 Created automatically when an ESP32 or other device publishes its first image. You can enable/disable it but cannot create one manually.
@@ -263,9 +263,6 @@ Export digit images from stored evaluations — useful for reviewing misclassifi
 4. If YOLO detection keeps failing, try the **ORB** or **Static Rectangle** extractor
 5. Increase `conf_threshold` to reject low-quality readings automatically
 
-### After changing thresholds or extractor
-
-Click **Reset Corr. Alg.** in the meter context menu (three-dot menu) so the correction algorithm starts fresh with the new configuration.
 
 ### Monitoring MQTT connection
 

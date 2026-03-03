@@ -23,20 +23,18 @@ ROI (Region of Interest) extractors identify and extract the digit display regio
 **Without ROI Extraction**:
 - Image contains meter housing, background, shadows
 - Digit recognition would process irrelevant areas
-- Lower accuracy, slower processing
+- Results probably unusable, unless MeterMonitor receives pre-processed images
 
 **With ROI Extraction**:
 - Only digit display region processed
-- Improved recognition accuracy
-- Faster processing
-- Better handling of camera position variations
+- Can handle movement of the camera with some extractors.
 
 ### Extraction Pipeline
 
 ```
 Input Image
     ↓
-ROI Extractor (YOLO/ORB/Bypass)
+ROI Extractor (YOLO/ORB/Static)
     ↓
 Extracted Display Region (Straightened)
     ↓
@@ -53,11 +51,12 @@ Digit Recognition (CNN classifier)
 
 MeterMonitor supports three ROI extraction methods:
 
-| Extractor | Method | Use Case | Configuration |
-|-----------|--------|----------|---------------|
-| **YOLO** | AI-based detection | Standard meters, good images | Automatic |
-| **ORB** | Template matching | Difficult meters, poor lighting | Manual template |
-| **Bypass** | No extraction | Testing, pre-cropped images | None |
+| Extractor  | Method             | Use Case                                                             | Configuration |
+|------------|--------------------|----------------------------------------------------------------------|---------------|
+| **YOLO**   | AI-based detection | Standard meters, good images                                         | Automatic |
+| **ORB**    | Template matching  | Most reliable, requires distinct features outside the display region | Manual template |
+| **Static** | Static cutting     | For very stable camera setups that don't move.                       | Manual template |
+| **Bypass** | No extraction      | For pre-cropped images                                               | None |
 
 ### Selection Criteria
 
@@ -66,13 +65,18 @@ MeterMonitor supports three ROI extraction methods:
 - Good image quality and lighting
 - Camera position is stable
 - You want zero-configuration solution
+- **Test with your own meter – some work great, some don't.**
 
 **Choose ORB when**:
-- YOLO detection fails consistently
+- YOLO detection fails consistently/too often
 - Non-standard meter layout
 - Extreme lighting conditions (very dark/bright)
 - Camera position varies slightly between captures
 - You need fine-tuned control
+
+**Choose Static when**:
+- Camera position is very stable – then it's super reliable
+- Extremely fast (no AI/ORB)
 
 **Choose Bypass when**:
 - Testing digit recognition only
@@ -193,7 +197,7 @@ ORB (Oriented FAST and Rotated BRIEF) uses feature matching:
 - Industrial meters with non-standard displays
 - Low-light environments where YOLO detection fails
 
-### Creating Templates
+### Creating Templates (in Setup)
 
 #### Step 1: Capture Reference Image
 
@@ -229,58 +233,15 @@ ORB (Oriented FAST and Rotated BRIEF) uses feature matching:
 - Ensure rectangle encompasses all digits
 - Avoid including frame/background
 
-#### Step 3: Template Configuration
+#### Step 3: Save Template
 
-System auto-calculates:
-- `target_width`: Output width (based on corner distances)
-- `target_height`: Output height
-- `target_width_ext`: Extended width (for `extended_last_digit`)
-- `target_height_ext`: Extended height
-
-**Advanced Parameters** (auto-configured, shown for reference):
-
-```json
-{
-  "display_corners": [[100, 150], [500, 150], [500, 300], [100, 300]],
-  "target_width": 400,
-  "target_height": 150,
-  "target_width_ext": 480,
-  "target_height_ext": 180,
-  "min_inliers": 10,
-  "inlier_ratio_threshold": 0.3,
-  "max_reprojection_error": 3.0,
-  "matching_mask_padding": 10,
-  "orb_nfeatures": 2000,
-  "orb_scale_factor": 1.2,
-  "orb_nlevels": 8
-}
-```
-
-#### Step 4: Save Template
-
-- Assign descriptive name
-- Template stored in database
-- Can be reused across multiple meters (if same model)
-
-### Using Templates
-
-**Assign to Meter**:
-1. Navigate to meter settings
-2. Set `roi_extractor`: `"orb"`
-3. Select template from dropdown
-4. Save settings
-
-**Template Reuse**:
-- One template can be used by multiple meters
-- Useful for identical meter models
-- Different lighting conditions OK (ORB is robust)
+After saving ("applying") the template, it will be used for all incoming images from that meter.
 
 ### ORB Algorithm Details
 
 **Feature Detection**:
 - Detects corner-like keypoints
 - Extracts rotation-invariant descriptors
-- 2000 features per image (configurable)
 
 **Matching**:
 - Brute-force matcher with Hamming distance
@@ -298,13 +259,12 @@ System auto-calculates:
 - **Fine control**: User marks exact region
 - **Explainable**: Visual template editor
 - **Deterministic**: Same features always detected
-- **Reusable**: Templates work across similar meters
 
 ### Limitations
 
 - **Setup time**: Requires manual template creation
 - **Template dependency**: Must recreate if meter replaced
-- **Feature-dependent**: Fails if display has no texture
+- **Feature-dependent**: Fails if display has no texture/features
 - **Slower**: ~200-400ms per image (vs YOLO ~100-200ms)
 - **Homography fails**: Insufficient matches → no extraction
 
@@ -314,7 +274,6 @@ System auto-calculates:
 1. Recapture reference image with better lighting
 2. Ensure template has textured patterns (not blank)
 3. Check camera position hasn't drastically changed
-4. Reduce `min_inliers` (risky, may allow bad matches)
 
 **Incorrect extraction**:
 1. Verify corner points are correct
@@ -327,6 +286,21 @@ System auto-calculates:
 2. Camera moved significantly from template position
 3. Extreme lighting change (very rare with ORB)
 4. Recapture template closer to current conditions
+
+
+---
+
+## Static Extractor
+
+The static extractor is configured in the same way as the ORB extractor.
+Instead of matching features, it uses a pre-defined region of interest (ROI) for extraction.
+The ROI is defined by a set of four corner points, which are used to crop the image for display region extraction.
+
+## Advantages
+1. Robust to lighting changes
+2. Faster than ORB extractor
+3. No need for feature detection and matching
+4. Suitable for images that never change perspective
 
 ---
 
@@ -390,46 +364,6 @@ Digit Recognition
 
 ---
 
-## Performance Comparison
-
-### Speed (Single Image)
-
-| Extractor | Time (CPU) | Time (GPU)* |
-|-----------|------------|-------------|
-| YOLO | 100-200ms | 20-50ms |
-| ORB | 200-400ms | N/A (CPU only) |
-| Bypass | <1ms | <1ms |
-
-*GPU support requires CUDA/TensorRT setup (not covered here)
-
-### Accuracy (Detection Success Rate)
-
-| Extractor | Standard Meters | Non-standard Meters | Variable Lighting | Variable Position |
-|-----------|----------------|---------------------|-------------------|-------------------|
-| YOLO | 95-99% | 60-80% | 85-95% | 90-98% |
-| ORB | 85-95% | 90-99% | 95-99% | 80-95% |
-| Bypass | N/A | N/A | N/A | 0% (fixed only) |
-
-*Estimates based on typical use cases; actual performance varies.*
-
-### Memory Usage
-
-| Extractor | RAM (Initialization) | RAM (Per Image) |
-|-----------|---------------------|-----------------|
-| YOLO | ~300MB | ~50MB |
-| ORB | ~50MB | ~30MB |
-| Bypass | <1MB | <1MB |
-
-### Configuration Effort
-
-| Extractor | Setup Time | Skill Required |
-|-----------|-----------|----------------|
-| YOLO | 0 minutes | None |
-| ORB | 2-5 minutes | Basic (point marking) |
-| Bypass | 0 minutes | Advanced (pre-processing) |
-
----
-
 ## Choosing the Right Extractor
 
 ### Decision Tree
@@ -452,15 +386,6 @@ Is meter a standard rectangular display?
       ↓
       Create template for non-standard layout ✓
 ```
-
-### Hybrid Approach
-
-Some users run both extractors and compare results:
-1. Primary: YOLO (fast, automatic)
-2. Fallback: ORB (when YOLO fails)
-3. Trigger: Switch to ORB if confidence < threshold
-
-**Note**: Not yet implemented in MeterMonitor, but possible via custom code.
 
 ---
 
@@ -497,59 +422,6 @@ Some users run both extractors and compare results:
 
 ---
 
-## Advanced Topics
-
-### Custom Extractors
-
-Developers can implement custom ROI extractors:
-
-**Base Class**: `lib/meter_processing/roi_extractors/base.py`
-
-**Interface**:
-```python
-class ROIExtractor:
-    def extract(self, input_image):
-        """
-        Extract display region from image.
-
-        Returns:
-            rotated_cropped_img: Display region (numpy array)
-            rotated_cropped_img_ext: Extended region (for last digit)
-            boundingboxed_image: Original with bbox drawn
-        """
-        pass
-```
-
-**Examples**:
-- `YOLOExtractor`: `/lib/meter_processing/roi_extractors/yolo_extractor.py`
-- `ORBExtractor`: `/lib/meter_processing/roi_extractors/orb_extractor.py`
-- `BypassExtractor`: `/lib/meter_processing/roi_extractors/bypass_extractor.py`
-
-### Template Serialization
-
-Templates are stored as:
-- **Reference image**: Base64-encoded PNG
-- **Config JSON**: Display corners, target sizes, ORB parameters
-- **Precomputed data**: ORB keypoints and descriptors (serialized)
-
-**Benefits**:
-- Fast loading (no recomputation)
-- Portable (database stored)
-- Versioned (via template ID)
-
-### Multi-Scale Detection
-
-For YOLO, image is resized to 640x640 before detection:
-- Maintains aspect ratio with padding
-- Bounding box coordinates scaled back to original size
-- Ensures consistent detection across resolutions
-
-For ORB, original resolution is used:
-- More keypoints at higher resolution
-- Better matching accuracy
-- But slower processing
-
----
 
 ## Troubleshooting
 
@@ -637,7 +509,6 @@ For ORB, original resolution is used:
 - [User Guide](user-guide.md)
 - [API Reference](api-reference.md)
 - [Troubleshooting Guide](troubleshooting.md)
-- [Development Guide](development.md) (for custom extractors)
 
 ### Research Papers
 
