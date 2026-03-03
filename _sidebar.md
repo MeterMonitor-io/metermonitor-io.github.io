@@ -1,12 +1,16 @@
+- **MeterMonitor**
+- [Home](README.md)
 - [Getting Started](getting-started.md)
 - [Installation](installation.md)
-- [Configuration](configuration.md)
+
+---
+
+- **Configuration**
+- [Configuration Reference](configuration.md)
+- [ESP32 / Camera Setup](esp32-setup.md)
+
+---
+
+- **Using MeterMonitor**
 - [User Guide](user-guide.md)
-- [API Reference](api-reference.md)
-- [Architecture](architecture.md)
-- [Database Schema](database-schema.md)
-- [ROI Extractors](roi-extractors.md)
-- [ESP32 Setup](esp32-setup.md)
-- [Advanced Topics](advanced-topics.md)
-- [Development](development.md)
 - [Troubleshooting](troubleshooting.md)

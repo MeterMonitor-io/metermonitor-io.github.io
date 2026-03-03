@@ -1,504 +1,221 @@
-# MeterMonitor User Guide
+# User Guide
 
-Complete guide to using MeterMonitor for automated water meter reading.
-
-## Table of Contents
-
-1. [Getting Started](#getting-started)
-2. [Initial Meter Discovery](#initial-meter-discovery)
-3. [Meter Setup](#meter-setup)
-4. [Configuration](#configuration)
-5. [Reading History](#reading-history)
-6. [Dataset Export](#dataset-export)
-7. [Common Tasks](#common-tasks)
+This guide walks through everything you can do in the MeterMonitor web interface.
 
 ---
 
-## Getting Started
+## Discovery
 
-MeterMonitor is an AI-powered system that reads analog water meters using ESP32 cameras. The system processes images on a central server, reducing device power consumption while providing accurate readings integrated with Home Assistant.
+When MeterMonitor receives its first image from a device it creates an entry in the **Discovery** tab. New meters appear here automatically — you don't need to create them manually.
 
-### Prerequisites
+### MQTT Setup Helper
 
-- Running MeterMonitor instance (Home Assistant add-on or standalone)
-- ESP32-CAM device with ESPHome firmware (see [esp32-setup.md](esp32-setup.md))
-- MQTT broker configured and running
-- Basic understanding of your water meter layout
+The Discovery tab includes an **MQTT Setup Helper** panel that shows:
 
----
+- The broker address and topic MeterMonitor is listening on
+- The exact JSON payload format expected from your device
 
-## Initial Meter Discovery
+**Expected MQTT payload** (topic: `MeterMonitor/<device-name>`):
 
-When MeterMonitor receives its first image from an ESP32 device, it automatically appears in the **Discovery** section.
+```json
+{
+  "name": "unique-device-name",
+  "WiFi-RSSI": -57,
+  "picture": {
+    "format": "jpeg",
+    "timestamp": "2025-06-01T10:00:00",
+    "data": "iVBORw0KGgoAAAANSUhEUgAA..."
+  }
+}
+```
 
-### Discovery Process
-
-1. Navigate to the **Discovery** tab in the web interface
-2. New meters appear with:
-   - Meter name (from MQTT topic)
-   - Last image timestamp
-   - WiFi signal strength (RSSI)
-   - Source type (MQTT, HA Camera, or HTTP)
-
-3. Click on a discovered meter to begin setup
-
-### What Happens During Discovery
-
-- Meter entry is created in the database
-- Default settings are applied:
-  - Threshold: 0-100 (low), 0-100 (high)
-  - Islanding padding: 20%
-  - Segments: 7 digits
-  - ROI extractor: YOLO (automatic detection)
-  - Correctional algorithm: Full mode enabled
+Required fields: `name`, `picture.data`.
+`WiFi-RSSI`, `picture.format`, and `picture.timestamp` are optional.
+`picture.data` can be raw base64 or a data-URI (`data:image/jpeg;base64,...`).
 
 ---
 
 ## Meter Setup
 
-Setup is required before MeterMonitor can track consumption. This process calibrates the system to your specific meter.
+Click a discovered meter to start setup. This configures how images are processed.
 
-### Step 1: Select ROI Extractor
+### Step 1 — Choose a display extraction method
 
-Choose how the display region should be detected:
+MeterMonitor needs to locate the digit display within the camera image. Four methods are available:
 
-#### YOLO (Automatic Detection)
-- **Best for**: Standard meter displays with clear digit regions
-- **Advantages**: Fully automatic, no manual configuration
-- **Requirements**: Meter display must be clearly visible
-- **Settings**:
-  - `rotated_180`: Enable if meter is upside-down
-  - `extended_last_digit`: Extends detection area for rightmost digit
+#### YOLO (default — recommended)
+Automatic AI-based detection. Works for most standard water meters with no configuration needed.
 
-#### ORB (Template-Based)
-- **Best for**: Non-standard meters, poor lighting, or YOLO detection failures
-- **Advantages**: Works with difficult meter layouts, robust to lighting changes
-- **Requirements**: Reference image with clear meter display
-- **Process**:
-  1. Capture reference image
-  2. Mark 4 corner points of the digit display (clockwise from top-left)
-  3. Save template
-  4. Select template in meter settings
+- Enable **Rotated 180°** if the camera is mounted upside-down.
+- Enable **Extended last digit** if the rightmost digit is getting cut off.
+
+#### ORB (template-based)
+Uses a reference image and manually marked corner points to find the display. More reliable when YOLO fails (unusual meters, difficult lighting).
+
+1. Capture or upload a clear reference image.
+2. Drag the four corner handles to mark the exact edges of the digit display (clockwise: top-left → top-right → bottom-right → bottom-left).
+3. Name and save the template.
+4. Templates can be reused across meters of the same model.
+
+> **Tip:** Mark the digit area only — exclude the meter housing. Leave a small margin around the digits.
+
+#### Static Rectangle
+Crops a fixed rectangle from every image — no detection involved. Use this when the camera is rigidly mounted and the display is always at the same position.
+
+1. Enter the X/Y coordinates and width/height of the crop rectangle in pixels.
+2. The crop is applied to every image without any matching.
+
+Good choice for IP cameras or when both YOLO and ORB are unreliable.
 
 #### Bypass
-- **Best for**: Testing or when display is already extracted
-- **Use case**: Advanced debugging only
-
-### Step 2: Configure Thresholds
-
-Thresholds determine how digits are extracted from the image.
-
-#### Automatic Threshold Search
-
-1. Click **Search Thresholds** in setup
-2. Select search steps (3-25):
-   - Lower values: Faster but less accurate
-   - Higher values: Slower but more precise
-3. System tests combinations and selects optimal values
-4. Review results:
-   - Average confidence score
-   - Sample digit images
-5. Apply if satisfactory
-
-#### Manual Threshold Adjustment
-
-**Main Digit Thresholds**:
-- `threshold_low`: Minimum pixel brightness (0-255)
-- `threshold_high`: Maximum pixel brightness (0-255)
-- Adjust to isolate digit pixels from background
-
-**Decimal Digit Thresholds** (if different):
-- `threshold_last_low`: Separate threshold for decimal-part digits
-- `threshold_last_high`: Useful when decimal wheels/segments have different contrast
-
-**Decimal Position**:
-- Use the decimal control (`.` with arrows) in the threshold picker
-- Moves decimal separator left/right
-- Defines how many rightmost digits use `threshold_last_*`
-
-**Per-Digit Model Selection**:
-- Toggle each digit between rotating-wheel model and 7-segment model
-- Use the icon row below the digit previews
-- Mixed setups are supported (per-digit)
-
-**Islanding Padding**:
-- Percentage of digit area to ignore at edges (default: 20%)
-- Prevents edge artifacts from affecting recognition
-
-**Tips**:
-- Use the preview to see thresholded digits
-- White pixels should show only the digit shape
-- Black background indicates good thresholding
-- If digits are broken/incomplete, increase `threshold_high`
-- If too much noise, decrease `threshold_high`
-
-### Step 3: Configure Layout
-
-**Segments**: Number of digits on your meter (typically 7)
-
-**Layout Options**:
-- `shrink_last_3`: Reduces width of rightmost 3 digits (for compact layouts)
-- `extended_last_digit`: Extends rightmost digit capture area
-- `rotated_180`: Flips image if meter is upside-down
-
-### Step 4: Set Correctional Algorithm
-
-Choose between two correction modes:
-
-#### Full Mode (Recommended)
-Applies comprehensive corrections:
-- Replaces rotation class ('r') with last known value
-- Validates positive flow (consumption only increases)
-- Checks max flow rate (rejects impossible increases)
-- Falls back to previous predictions on low confidence
-- Handles digit roll-over (9→0 transitions)
-
-**Configuration**:
-- `max_flow_rate`: Maximum expected flow in m³/h (default: 1.0)
-- Set based on your household's peak consumption
-
-#### Light Mode
-Minimal corrections only:
-- Replaces rotation class ('r') with last value
-- Replaces denied/low-confidence digits with last value
-- No flow rate validation
-- Faster processing
-
-**When to use**:
-- Testing and debugging
-- Unusual consumption patterns
-- Manual flow validation
-
-### Step 5: Set Initial Value
-
-1. Enter current meter reading manually
-2. Format: Enter full reading including leading zeros
-3. Click **Finish Setup**
-
-This value is used as the baseline for:
-- Consumption tracking
-- Correctional algorithm validation
-- History chart starting point
-
-### Step 6: Verify Setup
-
-After setup completion:
-1. Meter appears in **Watermeters** tab
-2. Check first reading appears in history
-3. Verify evaluation result shows correct digits
-4. Monitor confidence scores (should be >0.8 for good readings)
+Passes the entire image directly to digit recognition without any cropping. Only useful for testing or when images are already pre-cropped.
 
 ---
 
-## Configuration
+### Step 2 — Configure thresholds
 
-### Source Management
+Thresholds convert the grayscale digit image to a clean black-and-white image for recognition.
 
-Sources define how images reach MeterMonitor.
+#### Automatic threshold search
 
-#### MQTT Source
-Automatically created when ESP32 device sends first image.
+Click **Search Thresholds** and choose a step count (3–25). A higher count gives better results but takes longer. The system tests many combinations and shows the best result with sample digit previews.
 
-**Configuration**:
-- Cannot be created via UI (automatic only)
-- Can be disabled/enabled
-- View last success timestamp and errors
+#### Manual adjustment
 
-#### Home Assistant Camera Source
-Poll camera entities in Home Assistant at regular intervals.
+- **Threshold Low / High** — the grayscale brightness range (0–255) that is treated as "digit". Pixels within this range are set to white; everything else is black.
+- **Threshold Last Low / High** — separate thresholds for the decimal-part digits (rightmost). Useful when those digits are printed in a different color or have different contrast.
 
-**Setup**:
-1. Navigate to **Sources** tab
-2. Click **Create Source**
-3. Select source type: `HA Camera`
-4. Configure:
-   - Meter name (must match existing meter)
-   - Camera entity ID (e.g., `camera.watermeter`)
-   - Flash entity ID (optional LED control)
-   - Flash delay (ms to wait after turning on flash)
-   - Poll interval (seconds between captures)
-5. Test capture to verify configuration
-6. Enable source
+> **Reading the preview:** white pixels should show only the digit shape on a black background. If the digit looks broken, raise `threshold_high`. If there is too much noise, lower it.
 
-**Flash Configuration**:
-- Useful for ESP32-CAM with LED flash
-- Turns on light before capture
-- Automatically turns off after capture
-- Configurable delay for flash stabilization
+#### Islanding Padding
 
-#### HTTP Source
-Fetch images from HTTP endpoints.
+Percentage of the digit area to ignore at the edges (default 20%). Increase this if edge artifacts (lines, borders) are being picked up as digit pixels.
 
-**Setup**:
-1. Create source with type `HTTP`
-2. Configure:
-   - URL (http:// or https://)
-   - Custom headers (optional JSON object)
-   - Request body (optional)
-   - Poll interval
-3. Endpoint must return image data (JPEG/PNG)
+#### Decimal position
 
-**Example Use Cases**:
-- IP cameras with snapshot URLs
-- Custom image capture services
-- Webhook-based image delivery
-
-### ROI Extractor Settings
-
-Can be changed at any time in meter settings:
-
-1. Navigate to meter details
-2. Click **Edit Settings**
-3. Change `roi_extractor`:
-   - `yolo`: Automatic detection
-   - `orb`: Template-based (requires template)
-   - `bypass`: No extraction
-4. For ORB, select template from dropdown
-5. Save changes
-
-**Note**: Changing ROI extractor marks all evaluations as outdated. Re-evaluation will occur automatically on next image.
-
-### Template Management
-
-Templates are reference configurations for ORB-based extraction.
-
-#### Creating Templates
-
-1. Navigate to meter setup or settings
-2. Select **ORB** extractor
-3. Capture or upload reference image
-4. Mark 4 corner points:
-   - Top-left
-   - Top-right
-   - Bottom-right
-   - Bottom-left
-5. Preview extracted region
-6. Name template and save
-
-#### Template Point Editor
-
-Interactive editor features:
-- Drag points to adjust corners
-- Zoom in/out for precision
-- Reset to default positions
-- Real-time preview of extraction
-
-**Tips**:
-- Choose an image with clear digit display
-- Ensure all digits are within marked region
-- Avoid including frame/housing in region
-- Leave small margin around digits
-
-#### Editing Templates
-
-Templates are immutable after creation. To modify:
-1. Create new template with updated points
-2. Update meter settings to use new template
-3. Delete old template if no longer needed
+Use the decimal control (the `.` with arrows) to set how many of the rightmost digits are after the decimal point. This also determines which digits use the `threshold_last_*` values.
 
 ---
 
-## Reading History
+### Step 3 — Per-digit model selection
 
-### Viewing History
+Below the digit preview thumbnails, each digit has a small icon you can click to toggle its recognition model:
 
-**History Chart**:
-- X-axis: Timestamp
-- Y-axis: Meter reading (m³)
-- Line color: Green for automatic, Blue for manual entries
-- Hover for details: Exact value, confidence, time
+- **Rotating wheel** (default) — for classic analog drums that rotate continuously
+- **7-segment** — for LCD/7-segment style digits
 
-**History Table**:
-- Columns: Value, Timestamp, Confidence, Manual flag
-- Sort by any column
-- Export to CSV
+Mixed setups are supported: you can use rotating-wheel for most digits and 7-segment for just the last one (or vice versa).
 
-**Confidence Scores**:
-- Range: 0.0 to 1.0
-- >0.9: Excellent recognition
-- 0.8-0.9: Good recognition
-- 0.6-0.8: Acceptable, monitor for issues
-- <0.6: Poor recognition, check thresholds/lighting
+---
 
-### Evaluation Details
+### Step 4 — Layout settings
 
-Each reading has detailed evaluation data:
+| Setting | When to use |
+|---|---|
+| **Segments** | Set this to the number of digits your meter shows (typically 6–8) |
+| **Rotated 180°** | Camera is mounted upside-down |
+| **Shrink last 3** | Fractional digits are narrower than the main digits on your meter |
+| **Extended last digit** | The rightmost digit (rotation indicator) is getting cut off at the edge |
 
-**View Evaluation**:
-1. Click on evaluation in list
-2. Dialog shows:
-   - Colored digit images (original segments)
-   - Thresholded digits (after binary threshold)
-   - Predictions (top 3 for each digit)
-   - Confidence per digit
-   - Correctional metadata
+---
 
-**Correctional Metadata** (Full mode only):
-- `flow_rate_m3h`: Calculated flow rate
-- `delta_m3`: Change since last reading
-- `delta_raw`: Raw digit difference
-- `time_diff_min`: Time since last reading
-- `rejection_reason`: Why reading was rejected (if applicable)
-- `fallback_digit_count`: Digits corrected from previous value
-- `digits_changed_vs_last`: Digits different from last reading
-- `digits_changed_vs_top_pred`: Corrections applied to predictions
+### Step 5 — Error correction mode
 
-### Manual Entries
+#### Full mode (recommended)
+Comprehensive correction applied to every reading:
+- Rotation-class digits ('r') replaced with the last known value
+- Readings that decrease are rejected or corrected
+- Readings with an impossible flow rate are rejected
+- Low-confidence digits fall back to the previous prediction
+- Roll-over transitions (9→0) handled correctly
 
-Add manual readings to correct errors:
+Configure **Max flow rate** (m³/h) to match your installation's realistic peak. The default (1.0 m³/h) works for most households.
 
-1. Navigate to meter history
+#### Light mode
+Minimal correction — only rotation-class and explicitly denied digits are replaced. No flow-rate validation. Use this when debugging or when the full algorithm is rejecting valid readings.
+
+---
+
+### Step 6 — Set initial value
+
+Enter the current meter reading. This is used as the starting point for consumption tracking and error correction. Once saved, setup is complete and the meter appears in the **Watermeters** tab.
+
+---
+
+## Reading history and evaluations
+
+### History chart
+
+Each meter shows a chart of readings over time. Green points are automatic readings; blue points are manual entries. Hover over a point to see the exact value, confidence, and timestamp.
+
+### Evaluation details
+
+Click any reading in the evaluation list to see:
+- Individual digit images (colored and thresholded)
+- Top-3 predictions and confidence per digit
+- Correction metadata: flow rate, delta, rejection reason (if any)
+
+### Confidence scores
+
+| Range | Meaning |
+|---|---|
+| > 0.9 | Excellent |
+| 0.8–0.9 | Good |
+| 0.6–0.8 | Acceptable — monitor for issues |
+| < 0.6 | Poor — check thresholds and lighting |
+
+### Manual entries
+
+If a reading is wrong, you can add a manual correction:
+1. Go to the meter's history
 2. Click **Add Manual Entry**
-3. Enter correct reading
-4. Set timestamp (defaults to now)
-5. Save
+3. Enter the correct value and timestamp
 
-Manual entries:
-- Override incorrect automatic readings
-- Used by correctional algorithm as reference
-- Marked differently in charts
-- Cannot be automatically deleted
-
-### Clearing History
-
-Delete all readings for a meter:
-1. Go to meter details
-2. Click context menu (three dots)
-3. Select **Clear History**
-4. Confirm deletion
-
-**Warning**: This action cannot be undone. Export data first if needed.
+Manual entries are marked separately in the chart and are used by the correction algorithm as reference points.
 
 ---
 
-## Dataset Export
+## Sources
 
-Export digit images for training custom models or analysis.
+Sources define how images reach MeterMonitor. Navigate to the **Sources** tab to manage them.
 
-### Export Process
+### MQTT source
+Created automatically when an ESP32 or other device publishes its first image. You can enable/disable it but cannot create one manually.
 
-1. Navigate to meter details
-2. Click **Export Dataset**
-3. System collects:
-   - Colored digit images
-   - Thresholded digit images
-   - Labels (predicted digits)
-4. Download ZIP file
+### Home Assistant Camera source
+Polls a Home Assistant camera entity on a schedule.
 
-### Dataset Structure
+**Setup:**
+1. **Sources → Create Source → HA Camera**
+2. Set the meter name, camera entity ID (e.g. `camera.watermeter`), and poll interval (seconds)
+3. Optionally configure a flash entity and flash delay (ms) — MeterMonitor will turn on the light before each capture and off afterwards
+4. Click **Test Capture** to verify, then enable the source
 
-```
-meter_name_dataset.zip
-├── color/
-│   ├── 0/
-│   │   ├── 0_metername_hash1.png
-│   │   └── 0_metername_hash2.png
-│   ├── 1/
-│   ├── ...
-│   └── r/  (rotation class)
-└── th/
-    ├── 0/
-    │   ├── 0_metername_hash1.png
-    │   └── 0_metername_hash2.png
-    ├── 1/
-    └── ...
-```
+### HTTP source
+Fetches an image from an HTTP endpoint on a schedule.
 
-**File Naming**: `{label}_{metername}_{crc32hash}.png`
-- Label: Predicted digit (0-9 or r)
-- Meter name: Sanitized meter identifier
-- Hash: CRC32 checksum for uniqueness
-
-### Using Exported Data
-
-**Model Training**:
-- Images are pre-segmented and labeled
-- Suitable for CNN training datasets
-- Thresholded images match model input format
-
-**Quality Analysis**:
-- Review misclassifications
-- Identify problematic digit patterns
-- Assess threshold effectiveness
-
-**Dataset Management**:
-- Delete dataset: Removes all exported images
-- Download: Creates fresh ZIP from stored evaluations
-- Exports respect `max_evals` setting (configurable in settings)
+**Setup:**
+1. **Sources → Create Source → HTTP**
+2. Set the URL, poll interval, and any required headers or request body
+3. The endpoint must return a JPEG or PNG image
 
 ---
 
-## Common Tasks
+## Home Assistant integration
 
-### Improving Recognition Accuracy
+After meter setup is complete, MeterMonitor publishes readings to MQTT. Home Assistant picks these up via MQTT auto-discovery and creates a sensor automatically:
 
-**Low Confidence Scores**:
-1. Check lighting - ensure consistent illumination
-2. Adjust thresholds - run automatic search
-3. Try ORB extractor if YOLO fails
-4. Increase `conf_threshold` to reject low-quality readings
+- Entity: `sensor.watermeter_<name>_value`
+- Unit: m³
+- Device class: `water`
+- State class: `total_increasing`
 
-**Incorrect Readings**:
-1. Verify segment count matches meter
-2. Check `rotated_180` setting
-3. Review denied digits in evaluations
-4. Adjust correctional algorithm mode
-
-**Intermittent Failures**:
-1. Check WiFi signal strength (RSSI)
-2. Verify camera positioning (stable mount)
-3. Review flash timing (if using LED)
-4. Monitor source errors in source list
-
-### Changing Meter Configuration
-
-**Safe Changes** (no re-evaluation needed):
-- Poll interval
-- Flash settings
-- Source enable/disable
-
-**Changes Requiring Re-evaluation**:
-- Thresholds
-- ROI extractor
-- Segment count
-- Layout options
-
-To trigger re-evaluation:
-1. Change settings
-2. Click **Reset Corr. Alg.** in context menu
-3. Wait for next image or trigger manual capture
-
-### Monitoring System Health
-
-**Check MQTT Connection**:
-- Alerts appear in top-right corner
-- Red alert: MQTT disconnected
-- Reconnection is automatic with exponential backoff
-
-**Source Health**:
-- Navigate to **Sources** tab
-- Check `last_success_ts` column
-- Review `last_error` for failures
-- Enable/disable sources as needed
-
-**Database Maintenance**:
-- History and evaluations are automatically limited by `max_history` and `max_evals`
-- Oldest entries are pruned automatically
-- Manual cleanup: Delete meter to remove all associated data
-
-### Integration with Home Assistant
-
-**MQTT Discovery**:
-- Automatic sensor creation (if Mosquitto add-on used)
-- Sensor name: `sensor.watermeter_{metername}_value`
-- Attributes: Confidence, timestamp, source type
-
-**Manual YAML Configuration** (if discovery disabled):
+If auto-discovery doesn't work, add manually in `configuration.yaml`:
 
 ```yaml
 mqtt:
   sensor:
-    - name: "Water Meter Reading"
+    - name: "Water Meter"
       state_topic: "homeassistant/sensor/watermeter_kitchen/state"
       unit_of_measurement: "m³"
       device_class: "water"
@@ -506,54 +223,31 @@ mqtt:
       json_attributes_topic: "homeassistant/sensor/watermeter_kitchen/attributes"
 ```
 
-**Using Camera Integration**:
-- Create HA Camera source instead of MQTT
-- MeterMonitor polls camera entity
-- Useful for existing camera entities
-- Supports flash control for ESP32-CAM
+---
+
+## Dataset export
+
+Export digit images from stored evaluations — useful for reviewing misclassifications or contributing to model training.
+
+1. Meter detail → **Export Dataset**
+2. Download the ZIP file — it contains labeled digit images organised by predicted digit class
 
 ---
 
-## Tips and Best Practices
+## Common tasks
 
-### Camera Positioning
-- Mount camera perpendicular to meter face
-- Distance: 10-30cm depending on lens
-- Avoid reflections and glare
-- Ensure entire digit display is visible
-- Use flash in low-light conditions
+### Improving recognition accuracy
 
-### Threshold Tuning
-- Start with automatic search
-- Fine-tune manually if needed
-- Different meters may need different values
-- Last digit often needs separate thresholds
-- Preview thresholded images to verify
+1. Check lighting — consistent, shadow-free illumination gives the best results
+2. Run **Threshold Search** (automatic is a good starting point)
+3. Verify the number of **Segments** matches your meter
+4. If YOLO detection keeps failing, try the **ORB** or **Static Rectangle** extractor
+5. Increase `conf_threshold` to reject low-quality readings automatically
 
-### Correctional Algorithm
-- Use Full mode for most cases
-- Set realistic max_flow_rate
-- Light mode for testing/debugging
-- Manual entries help algorithm learn
+### After changing thresholds or extractor
 
-### Performance
-- Limit `max_evals` to reduce database size
-- Export datasets before clearing evaluations
-- Use YOLO extractor when possible (faster than ORB)
-- Increase poll intervals to reduce processing load
+Click **Reset Corr. Alg.** in the meter context menu (three-dot menu) so the correction algorithm starts fresh with the new configuration.
 
-### Troubleshooting
-- Check evaluation details for insight into failures
-- Monitor confidence trends over time
-- Review rejection reasons in evaluation metadata
-- Use manual entries to correct persistent errors
+### Monitoring MQTT connection
 
----
-
-## Next Steps
-
-- [ESP32 Hardware Setup](esp32-setup.md)
-- [ROI Extractor Guide](roi-extractors.md)
-- [API Reference](api-reference.md)
-- [Troubleshooting Guide](troubleshooting.md)
-- [Advanced Topics](advanced-topics.md)
+A red notification in the top-right corner means MeterMonitor lost connection to the MQTT broker. Reconnection is automatic with exponential backoff. Check the [Troubleshooting](troubleshooting.md) guide if it doesn't recover.

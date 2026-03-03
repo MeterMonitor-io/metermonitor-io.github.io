@@ -3,85 +3,255 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MeterMonitor Addon Docs</title>
+    <title>MeterMonitor Docs</title>
     <link rel="icon" href="logo.png" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css"
     />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/style.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/docsify-sidebar-collapse/dist/sidebar.min.css"
-    />
     <style>
+      /* ─── Typography ─────────────────────────────────── */
       :root {
-        --theme-color: #c14b2e;
-        --base-background-color: #f7f2ea;
-        --sidebar-background: #fffdf8;
-        --text-color-base: #242424;
+        --base-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter,
+          Roboto, 'Helvetica Neue', Arial, sans-serif;
+        --base-font-size: 15px;
+        --code-font-size: 13px;
+        --code-font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
+          monospace;
+        --base-line-height: 1.65;
+
+        /* ─── Light palette (matches app AppWrapper.vue) ─── */
+        --theme-color: #0891b2;
+        --theme-color-secondary-level-1: rgba(8, 145, 178, 0.12);
+        --base-background-color: #f5f5f5;
+        --sidebar-background: #ffffff;
+        --sidebar-border-right: 1px solid rgba(0, 0, 0, 0.08);
+        --sidebar-width: 260px;
+        --text-color-base: #1a1a1a;
+        --text-color-muted: #6b7280;
+        --cover-background-color: #f5f5f5;
+
+        /* Links */
+        --link-color: #0891b2;
+        --link-color--hover: #0e7490;
+
+        /* Sidebar nav */
+        --sidebar-nav-link-color: #374151;
+        --sidebar-nav-link-color--hover: #0891b2;
+        --sidebar-nav-link-color--active: #0891b2;
+        --sidebar-nav-link-font-weight--active: 600;
+        --sidebar-nav-link-background-color--hover: rgba(8, 145, 178, 0.08);
+        --sidebar-nav-link-background-color--active: rgba(8, 145, 178, 0.10);
+        --sidebar-nav-pagelink-color: #374151;
+
+        /* Code blocks */
+        --code-theme-background: #f0f4f8;
+        --code-theme-text: #1a1a1a;
+
+        /* Blockquotes */
+        --blockquote-border-left: 4px solid #0891b2;
+        --blockquote-background: rgba(8, 145, 178, 0.06);
+        --blockquote-color: #374151;
+        --blockquote-padding: 0.8em 1em;
       }
 
-      body {
-        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      /* ─── Dark palette ───────────────────────────────── */
+      [data-theme='dark'] {
+        --theme-color: #18bcf2;
+        --theme-color-secondary-level-1: rgba(24, 188, 242, 0.14);
+        --base-background-color: #111111;
+        --sidebar-background: #1a1a1a;
+        --sidebar-border-right: 1px solid rgba(255, 255, 255, 0.07);
+        --text-color-base: #e0e6ed;
+        --text-color-muted: #9ca3af;
+
+        --link-color: #38bdf8;
+        --link-color--hover: #7dd3fc;
+
+        --sidebar-nav-link-color: #cbd5e1;
+        --sidebar-nav-link-color--hover: #38bdf8;
+        --sidebar-nav-link-color--active: #38bdf8;
+        --sidebar-nav-link-background-color--hover: rgba(24, 188, 242, 0.10);
+        --sidebar-nav-link-background-color--active: rgba(24, 188, 242, 0.12);
+        --sidebar-nav-pagelink-color: #cbd5e1;
+
+        --code-theme-background: #1e2a35;
+        --code-theme-text: #e0e6ed;
+        --blockquote-background: rgba(24, 188, 242, 0.07);
+        --blockquote-color: #94a3b8;
       }
 
-      .sidebar .app-name {
+      /* ─── Sidebar branding ───────────────────────────── */
+      .sidebar .app-name-link {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        text-decoration: none !important;
         font-weight: 700;
+        font-size: 16px;
+        color: var(--text-color-base) !important;
+        padding: 12px 0 4px;
       }
 
-      .sidebar .app-name img {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        border: 1px solid #eadfce;
+      .sidebar .app-name-link img {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
       }
 
+      /* ─── Sidebar nav polish ─────────────────────────── */
+      .sidebar-nav ul {
+        padding: 0;
+        margin: 0;
+      }
+
+      .sidebar-nav li a {
+        border-radius: 6px;
+        padding: 4px 10px;
+        display: block;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      /* ─── Content area ───────────────────────────────── */
       .markdown-section {
-        max-width: 900px;
+        max-width: 860px;
       }
 
-      [data-theme="dark"] {
-        --base-background-color: #1a1f24;
-        --sidebar-background: #11161b;
-        --text-color-base: #e3e6ea;
+      .markdown-section h1 {
+        font-size: 1.9em;
+        font-weight: 700;
+        border-bottom: 2px solid var(--theme-color);
+        padding-bottom: 0.3em;
+        margin-bottom: 0.8em;
+      }
+
+      .markdown-section h2 {
+        font-size: 1.4em;
+        font-weight: 600;
+        margin-top: 2em;
+        padding-bottom: 0.2em;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      }
+
+      [data-theme='dark'] .markdown-section h2 {
+        border-bottom-color: rgba(255, 255, 255, 0.07);
+      }
+
+      .markdown-section h3 {
+        font-size: 1.1em;
+        font-weight: 600;
+        color: var(--theme-color);
+      }
+
+      /* Code blocks */
+      .markdown-section pre {
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.07);
+      }
+
+      [data-theme='dark'] .markdown-section pre {
+        border-color: rgba(255, 255, 255, 0.06);
+      }
+
+      /* Inline code */
+      .markdown-section code:not([class]) {
+        background: var(--code-theme-background);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 0.88em;
+      }
+
+      /* Tables */
+      .markdown-section table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 1em 0;
+        font-size: 0.93em;
+      }
+
+      .markdown-section th {
+        background: var(--theme-color-secondary-level-1);
+        color: var(--theme-color);
+        font-weight: 600;
+        text-align: left;
+        padding: 8px 12px;
+      }
+
+      .markdown-section td {
+        padding: 7px 12px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      [data-theme='dark'] .markdown-section td {
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+      }
+
+      .markdown-section tr:hover td {
+        background: var(--theme-color-secondary-level-1);
+      }
+
+      /* Search box */
+      .search input {
+        border-radius: 6px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        font-size: 13px;
+        padding: 6px 10px;
+        background: var(--sidebar-background);
+        color: var(--text-color-base);
+      }
+
+      [data-theme='dark'] .search input {
+        border-color: rgba(255, 255, 255, 0.10);
+      }
+
+      .search .results-panel {
+        border-radius: 0 0 8px 8px;
+        border: 1px solid rgba(0, 0, 0, 0.10);
+        border-top: none;
+      }
+
+      /* Dark mode toggle */
+      .darklight-switch {
+        margin: 8px 0 0 0;
+        opacity: 0.7;
       }
     </style>
   </head>
   <body>
-    <div id="app">Loading docs...</div>
+    <div id="app">Loading docs…</div>
 
     <script>
       window.$docsify = {
-        name: "MeterMonitor",
-        logo: "logo.png",
-        loadSidebar: true,
+        name: '<img src="logo.png" width="28" style="border-radius:6px;vertical-align:middle;margin-right:8px"> MeterMonitor',
+        loadSidebar: '_sidebar.md',
         alias: {
-          "/.*/_sidebar.md": "/_sidebar.md",
+          '/.*/_sidebar.md': '/_sidebar.md',
         },
-        relativePath: true,
         subMaxLevel: 2,
         auto2top: true,
-        homepage: "README.md",
-        executeScript: false,
-        search: "auto",
-        repo: "",
-        sidebarDisplayLevel: 1,
+        homepage: 'README.md',
+        search: {
+          placeholder: 'Search…',
+          noData: 'No results.',
+          depth: 3,
+        },
         darklightTheme: {
-          defaultTheme: "light",
-          siteFont: "Space Grotesk, Segoe UI, sans-serif",
+          defaultTheme: 'light',
+          siteFont: '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif',
+          codeFontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+          dark: {
+            background: '#111111',
+            highlightColor: '#18bcf2',
+          },
+          light: {
+            background: '#f5f5f5',
+            highlightColor: '#0891b2',
+          },
         },
       };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docsify-sidebar-collapse/dist/docsify-sidebar-collapse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/index.min.js"></script>
   </body>
 </html>
